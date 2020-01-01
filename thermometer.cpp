@@ -73,6 +73,15 @@ void Thermometer::setCurrentTemperature(double newTemperature)
     emit temperatureChanged(newTemperature);
 }
 
+void Thermometer::updateLevelPosition()
+{
+    if(levelPosition < getLevelAt(currentTemperature))
+        levelPosition++;
+    if(levelPosition > getLevelAt(currentTemperature))
+        levelPosition--;
+    update();
+}
+
 
 /* Given 'pos.y' the ordinatee of the top right corner of the thermometer,
  * and given 'h' its height.

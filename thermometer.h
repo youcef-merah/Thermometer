@@ -21,6 +21,9 @@ signals:
 public slots:
     void setCurrentTemperature(double value);
 
+private slots:
+    void updateLevelPosition();
+
 private:
     int getLevelAt(double temperature);
     QLinearGradient setThermometerColors(QPoint, QPoint);
