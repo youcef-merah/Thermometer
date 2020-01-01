@@ -17,15 +17,21 @@ protected:
 signals:
 
 public slots:
+    void on_levelMoving_time();
+
+private:
+    int setLevelAt(double temperature);
+    QLinearGradient setThermometerColors(QPoint, QPoint);
 
 private:
     double currentTemperature;
+    //TODO: make it static
     double maxTemperature, minTemperature;
     double lowestWarmTemperature, highestColdTemperature;
-    QPoint level;
+    int levelPosition;
     QColor warmColor, ambiantColor, coldColor;
     unsigned int warmAlpha, ambiantAlpha, coldAlpha;
-
+    QTimer *paintTimer, *levelMovingTimer;
 };
 
 #endif // THERMOMETER_H
