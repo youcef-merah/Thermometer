@@ -11,16 +11,18 @@ public:
                          double maxTemperature = 10,
                          double minTemperature = -5);
 
+
 protected:
     virtual void paintEvent(QPaintEvent *event) override;
 
 signals:
+    void temperatureChanged(double);
 
 public slots:
-    void on_levelMoving_time();
+    void setCurrentTemperature(double value);
 
 private:
-    int setLevelAt(double temperature);
+    void setLevelAt(double temperature);
     QLinearGradient setThermometerColors(QPoint, QPoint);
 
 private:

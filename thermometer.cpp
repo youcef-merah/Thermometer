@@ -9,13 +9,12 @@ Thermometer::Thermometer(QWidget *parent, double max, double min)
     setWindowTitle(tr("Temperature"));
     this->setGeometry(QRect(0, 0, 15, 150));
 
-    currentTemperature = 0.00;
     maxTemperature = max;
     minTemperature = min;
     lowestWarmTemperature  = (2*max + min)/3;
     highestColdTemperature = (max + 2*min)/3;
 
-    this->setLevelAt(currentTemperature);
+    setLevelAt(currentTemperature = 0.00);
 
     warmColor = QColor(QRgb(0xff4e50));
     ambiantColor= QColor(QRgb(0x0fd850));
@@ -25,17 +24,19 @@ Thermometer::Thermometer(QWidget *parent, double max, double min)
     ambiantColor.setAlpha(ambiantAlpha = 0xff);
     coldColor.setAlpha(coldAlpha = 0xff);
 
-    connect(paintTimer, &QTimer::timeout,
+    paintTimer = new QTimer();
+    /*connect(paintTimer, &QTimer::timeout,
             this, QOverload<>::of(&Thermometer::update));
-    connect(levelMovingTimer, &QTimer::timeout,
-            this, &Thermometer::on_levelMoving_time);
-    paintTimer->start(1000);
-    paintTimer->start(1000);
+    paintTimer->start(1000);*/
+
+    connect(this, &Thermometer::temperatureChanged,
+            this, QOverload<>::of(&Thermometer::update));
 
 
 }
 void Thermometer::paintEvent(QPaintEvent *)
 {
+    qDebug() << "In paintEvent";
     QPainter painter(this);
     const QPoint bottom_right(pos().x() + width(), pos().y() + height());
 
@@ -60,6 +61,19 @@ void Thermometer::paintEvent(QPaintEvent *)
 }
 
 
+void Thermometer::setCurrentTemperature(double newTemperature)
+{
+    if (newTemperature > maxTemperature)
+        newTemperature = maxTemperature;
+    else if(newTemperature < minTemperature)
+        newTemperature = minTemperature;
+
+    currentTemperature = newTemperature;
+    setLevelAt(currentTemperature);
+    emit temperatureChanged(newTemperature);
+}
+
+
 /* Given 'pos.y' the ordinatee of the top right corner of the thermometer,
  * and given 'h' its height.
  * Given max and min the respective maximum and minimum temperature level,
@@ -76,13 +90,12 @@ void Thermometer::paintEvent(QPaintEvent *)
  * Then we obtain:
  *      level.y = (max - level)*scale + pos.y
  */
-int Thermometer::setLevelAt(double temperature)
+void Thermometer::setLevelAt(double temperature)
 {
     double scale = height() / (maxTemperature - minTemperature);
     // Now we compute delta := delta.y/scale
     double deltaTemperature = (maxTemperature - temperature);
     levelPosition = static_cast<int>(deltaTemperature*scale + pos().y());
-    return levelPosition;
 }
 
 QLinearGradient Thermometer::setThermometerColors(QPoint topLeft,
@@ -95,4 +108,3 @@ QLinearGradient Thermometer::setThermometerColors(QPoint topLeft,
 
     return gaugeColor;
 }
-
