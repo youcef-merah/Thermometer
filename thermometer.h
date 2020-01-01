@@ -35,8 +35,7 @@ private: /* Properties */
     double maxTemperature, minTemperature;
     double lowestWarmTemperature, highestColdTemperature;
     int levelPosition;
-    QColor warmColor, ambiantColor, coldColor;
-    unsigned int warmAlpha, ambiantAlpha, coldAlpha;
+    QColor temperatureColor;
     QTimer *levelUpdatingTime;
 };
 

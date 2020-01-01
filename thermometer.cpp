@@ -7,23 +7,17 @@ Thermometer::Thermometer(QWidget *parent, double max, double min)
     :QWidget(parent)
 {
     setWindowTitle(tr("Temperature"));
-    this->setGeometry(QRect(0, 0, 15, 150));
+    this->setGeometry(QRect(20, 50, 200, 500));
 
     maxTemperature = max;
     minTemperature = min;
     lowestWarmTemperature  = (2*max + min)/3;
     highestColdTemperature = (max + 2*min)/3;
 
-    warmColor = QColor(QRgb(0xff4e50));
-    ambiantColor= QColor(QRgb(0x0fd850));
-    coldColor = QColor(QRgb(0x3ab5b0));
-
-    warmColor.setAlpha(warmAlpha = 0xff);
-    ambiantColor.setAlpha(ambiantAlpha = 0xff);
-    coldColor.setAlpha(coldAlpha = 0xff);
+    temperatureColor = Qt::darkRed;
 
     levelUpdatingTime = new QTimer();
-    levelUpdatingTime->setInterval(1000);
+    levelUpdatingTime->setInterval(100);
     levelPosition = getLevelAt(currentTemperature = (max+min)/2);
 
     connect(levelUpdatingTime, &QTimer::timeout,
@@ -38,52 +32,119 @@ Thermometer::~Thermometer()
 void Thermometer::paintEvent(QPaintEvent *)
 {
     QPainter painter(this);
-    const QPoint bottom_right(pos().x() + width(), pos().y() + height());
+    QPoint topLeft;
+    QRect rect;
 
-    /* Draw the thermometer gauge*/
-    QPen pen;
-    pen.setStyle(Qt::SolidLine);
-    pen.setWidth(2);
-    pen.setBrush(Qt::black);
-    pen.setCapStyle(Qt::RoundCap);
-    pen.setJoinStyle(Qt::RoundJoin);
-    painter.setPen(pen);
-    QLinearGradient gaugeColor =
-                    this->setThermometerColors(pos(), bottom_right);
-    painter.setBrush(QBrush(gaugeColor));
-    painter.setBrushOrigin(pos().x(), levelPosition);
-    painter.drawRoundedRect(QRectF(pos(), bottom_right), 7, 7);
+    QLinearGradient gradientFrame;
+    // Paint frame
+    //background-image: linear-gradient(to right, #434343 0%, black 100%);
+    topLeft = QPoint(0, 0);
+    rect = QRect(topLeft, QSize(width(), height()));
+    painter.setBrush(Qt::black);
+    painter.setPen(Qt::black);
+    gradientFrame.setStart(QPoint(0, 0));
+    gradientFrame.setFinalStop(QPoint(width(), 0));
+    gradientFrame.setColorAt(1,  Qt::black);
+    gradientFrame.setColorAt(0,  QRgb(0x43434));
+    painter.setBrush(gradientFrame);
 
-    /* Draw the level cursor */
-    const QPoint left(pos().x(), levelPosition);
-    const QPoint right(bottom_right.x(), levelPosition);
-    painter.setBrush(QBrush());
-    painter.drawLine(left, right);
+    painter.drawRoundedRect(rect, 50, 50);
+
+    //Paint circle
+    painter.setPen(Qt::transparent);
+    const int marginC = static_cast<int>(width()*0.25);
+    const int diameter = width() - 2*marginC;
+    topLeft = QPoint(marginC, height() - diameter - marginC);
+    rect = QRect(topLeft, QSize(diameter, diameter));
+    painter.setBrush(temperatureColor);
+    painter.drawEllipse(rect);
+
+    //Paint gauge
+    const int marginG = static_cast<int>(width()*0.45);
+    const int widthGauge = width() - 2*marginG;
+    topLeft = QPoint(marginG, levelPosition);
+    rect = QRect(topLeft, QSize(widthGauge,
+                                height() - diameter - marginC - levelPosition));
+
+    painter.setBrush(temperatureColor);
+    painter.drawRect(rect);
+
+    //Paint gauge glass
+    topLeft = QPoint(marginG, marginG);
+    rect = QRect(topLeft, QSize(widthGauge,
+                                height() - diameter - marginC - marginG));
+
+    QLinearGradient gradientGauge;
+    gradientGauge.setStart(QPoint(marginG, levelPosition));
+    gradientGauge.setFinalStop(QPoint(marginG + widthGauge, levelPosition));
+    gradientGauge.setColorAt(0, temperatureColor);
+    gradientGauge.setColorAt(0.6, Qt::black);
+
+    gradientGauge.setStart(topLeft);
+    gradientGauge.setFinalStop(QPoint(marginG + widthGauge, marginG));
+    gradientGauge.setSpread(QGradient::RepeatSpread);
+    gradientGauge.setColorAt(0, QColor(0xff, 0xff, 0xff, 0x00));
+    gradientGauge.setColorAt(0.8, QColor(0xff, 0xff, 0xff, 0x55));
+    gradientGauge.setColorAt(1, QColor(0xff, 0xff, 0xff, 0x00));
+
+    painter.setBrush(gradientGauge);
+    painter.setBrushOrigin(marginG, levelPosition);
+    painter.drawRect(rect);
+
+    //Paint Circle glass
+    topLeft = QPoint(marginC, height() - diameter - marginC);
+    rect = QRect(topLeft, QSize(diameter, diameter));
+
+    QLinearGradient gradientCircle;
+    gradientCircle.setStart(topLeft);
+    gradientCircle.setFinalStop(QPoint(width() - marginC, height() - diameter - marginC ));
+    gradientCircle.setColorAt(0, temperatureColor);
+    gradientCircle.setColorAt(0.6, Qt::black);
+
+    gradientCircle.setColorAt(0, QColor(0xff, 0xff, 0xff, 0x00));
+    gradientCircle.setColorAt(0.8, QColor(0xff, 0xff, 0xff, 0x55));
+    gradientCircle.setColorAt(1, QColor(0xff, 0xff, 0xff, 0x00));
+
+    painter.setBrush(gradientCircle);
+    //painter.setBrush(temperatureColor);
+
+
+    painter.drawEllipse(rect);
     updateLevelPosition();
 }
 
-/* Given 'pos.y' the ordinatee of the top right corner of the thermometer,
- * and given 'h' its height.
+/* Given 'pos_y' the ordinatee of the top left corner of the thermometer gauge,
+ * and given 'H' its height.
  * Given max and min the respective maximum and minimum temperature level,
- * and given level the current temperature and level.y its corresponding
+ * and given temp the current temperature and temp_y its corresponding
  * ordinatee on the widget.
  *
- * The the scale between the height of the thermometer widget and the
- * correspondings real values is:
- *               scale := h / (max - min)
- * We define the distance between pos.y and level.y by
- *               delta.y := level.y - pos.y
- * Obviously     level = max - delta.y/scale
+ * The scale between the height of the gauge and the
+ * correspondings real values range (in celcius) is:
+ *               scale := H / (max - min)
  *
- * Then we obtain:
- *      level.y = (max - level)*scale + pos.y
+ * We define the distance between pos_y and temp_y (according to the QT graphic
+ * representation) by:
+ *               delta_y := temp_y - pos_y
+ * And the distance: deltaTemp =  max - temp
+ * Obviously     deltaTemp = scale * delta_y
+ *           <=> temp_y - pos_y = scale * (max - min)
+ *           <=> temp_y = pos_y + scale * deltaTemp
  */
 int Thermometer::getLevelAt(double temperature)
 {
-    double scale = height() / (maxTemperature - minTemperature);
-    // Now we compute delta := delta.y/scale
+    /* First we set the size and the position of the gauge accordind its
+     * representation in paintEvent after
+     * "Rounded Rectangle - temperature color - foreground" comment */
+    const int marginC = static_cast<int>(width()*0.25);
+    const int marginG = static_cast<int>(width()*0.45);
+    const int diameter = width() - 2*marginC;
+    const int H = height() - diameter - marginC - marginG;
+    const int pos_y = marginG;
+
+    double scale = H / (maxTemperature - minTemperature);
     double deltaTemperature = (maxTemperature - temperature);
-    return static_cast<int>(deltaTemperature*scale + pos().y());
+    return static_cast<int>(pos_y + scale * deltaTemperature);
 }
 
 void Thermometer::setCurrentTemperature(double newTemperature)
@@ -99,21 +160,6 @@ void Thermometer::setCurrentTemperature(double newTemperature)
 
     emit temperatureChanged(newTemperature);
 }
-
-QLinearGradient Thermometer::setThermometerColors(QPoint topLeft,
-                                                  QPoint bottomRight)
-{
-    QColor transparentTop = QColor();
-    transparentTop.setAlpha(0x00);
-    QLinearGradient gaugeColor(topLeft, bottomRight);
-    gaugeColor.setColorAt(0.0, transparentTop);
-    gaugeColor.setColorAt(0.1, warmColor);
-    gaugeColor.setColorAt(0.5, ambiantColor);
-    gaugeColor.setColorAt(1, coldColor);
-
-    return gaugeColor;
-}
-
 
 void Thermometer::updateLevelPosition()
 {
