@@ -22,7 +22,7 @@ public slots:
     void setCurrentTemperature(double value);
 
 private:
-    void setLevelAt(double temperature);
+    int getLevelAt(double temperature);
     QLinearGradient setThermometerColors(QPoint, QPoint);
 
 private:

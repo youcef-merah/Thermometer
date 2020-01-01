@@ -14,7 +14,7 @@ Thermometer::Thermometer(QWidget *parent, double max, double min)
     lowestWarmTemperature  = (2*max + min)/3;
     highestColdTemperature = (max + 2*min)/3;
 
-    setLevelAt(currentTemperature = 0.00);
+    levelPosition = getLevelAt(currentTemperature = 0.00);
 
     warmColor = QColor(QRgb(0xff4e50));
     ambiantColor= QColor(QRgb(0x0fd850));
@@ -69,7 +69,7 @@ void Thermometer::setCurrentTemperature(double newTemperature)
         newTemperature = minTemperature;
 
     currentTemperature = newTemperature;
-    setLevelAt(currentTemperature);
+    levelPosition = getLevelAt(currentTemperature);
     emit temperatureChanged(newTemperature);
 }
 
@@ -90,12 +90,12 @@ void Thermometer::setCurrentTemperature(double newTemperature)
  * Then we obtain:
  *      level.y = (max - level)*scale + pos.y
  */
-void Thermometer::setLevelAt(double temperature)
+int Thermometer::getLevelAt(double temperature)
 {
     double scale = height() / (maxTemperature - minTemperature);
     // Now we compute delta := delta.y/scale
     double deltaTemperature = (maxTemperature - temperature);
-    levelPosition = static_cast<int>(deltaTemperature*scale + pos().y());
+    return static_cast<int>(deltaTemperature*scale + pos().y());
 }
 
 QLinearGradient Thermometer::setThermometerColors(QPoint topLeft,
