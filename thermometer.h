@@ -6,14 +6,20 @@
 class Thermometer : public QWidget
 {
     Q_OBJECT
+
 public:
     explicit Thermometer(QWidget *parent = nullptr,
                          double maxTemperature = 10,
                          double minTemperature = -5);
 
+    ~Thermometer() override;
 
 protected:
     virtual void paintEvent(QPaintEvent *event) override;
+
+private:
+    int getLevelAt(double temperature);
+    QLinearGradient setThermometerColors(QPoint, QPoint);
 
 signals:
     void temperatureChanged(double);
@@ -24,19 +30,14 @@ public slots:
 private slots:
     void updateLevelPosition();
 
-private:
-    int getLevelAt(double temperature);
-    QLinearGradient setThermometerColors(QPoint, QPoint);
-
-private:
+private: /* Properties */
     double currentTemperature;
-    //TODO: make it static
     double maxTemperature, minTemperature;
     double lowestWarmTemperature, highestColdTemperature;
     int levelPosition;
     QColor warmColor, ambiantColor, coldColor;
     unsigned int warmAlpha, ambiantAlpha, coldAlpha;
-    QTimer *paintTimer, *levelMovingTimer;
+    QTimer *levelUpdatingTime;
 };
 
 #endif // THERMOMETER_H
