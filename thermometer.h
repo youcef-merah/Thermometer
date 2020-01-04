@@ -2,6 +2,7 @@
 #define THERMOMETER_H
 
 #include <QWidget>
+#include <QLCDNumber>
 
 class Thermometer : public QWidget
 {
@@ -37,6 +38,7 @@ private: /* Properties */
     int levelPosition;
     QColor temperatureColor;
     QTimer *levelUpdatingTime;
+    QLCDNumber *lcdTemp;
 };
 
 #endif // THERMOMETER_H

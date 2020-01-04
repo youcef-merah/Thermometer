@@ -7,7 +7,7 @@ Thermometer::Thermometer(QWidget *parent, double max, double min)
     :QWidget(parent)
 {
     setWindowTitle(tr("Temperature"));
-    this->setGeometry(QRect(20, 50, 200, 500));
+    this->setGeometry(QRect(20, 30, 150, 300));
 
     maxTemperature = max;
     minTemperature = min;
@@ -20,6 +20,12 @@ Thermometer::Thermometer(QWidget *parent, double max, double min)
     levelUpdatingTime->setInterval(100);
     levelPosition = getLevelAt(currentTemperature = (max+min)/2);
 
+    lcdTemp = new QLCDNumber(this);
+    lcdTemp->display(currentTemperature);
+    lcdTemp->setDigitCount(4);
+    lcdTemp->setStyleSheet("background-color: black;"
+                           "color: red;"
+                           "border: 2px solid gray;");
     connect(levelUpdatingTime, &QTimer::timeout,
             this, QOverload<>::of(&Thermometer::update));
 }
@@ -27,6 +33,7 @@ Thermometer::Thermometer(QWidget *parent, double max, double min)
 Thermometer::~Thermometer()
 {
     delete levelUpdatingTime;
+    delete lcdTemp;
 }
 
 void Thermometer::paintEvent(QPaintEvent *)
@@ -35,45 +42,36 @@ void Thermometer::paintEvent(QPaintEvent *)
     QPoint topLeft;
     QRect rect;
 
-    QLinearGradient gradientFrame;
-    // Paint frame
-    //background-image: linear-gradient(to right, #434343 0%, black 100%);
-    topLeft = QPoint(0, 0);
-    rect = QRect(topLeft, QSize(width(), height()));
-    painter.setBrush(Qt::black);
     painter.setPen(Qt::black);
+
+    // Paint frame
+    topLeft = QPoint(0, 0);
+    rect = QRect(topLeft, QSize(width(), height()-1));
+    QLinearGradient gradientFrame;
     gradientFrame.setStart(QPoint(0, 0));
     gradientFrame.setFinalStop(QPoint(width(), 0));
     gradientFrame.setColorAt(1,  Qt::black);
     gradientFrame.setColorAt(0,  QRgb(0x43434));
     painter.setBrush(gradientFrame);
+    painter.drawRoundedRect(rect, 5, 5);
 
-    painter.drawRoundedRect(rect, 50, 50);
-
-    //Paint circle
-    painter.setPen(Qt::transparent);
-    const int marginC = static_cast<int>(width()*0.25);
-    const int diameter = width() - 2*marginC;
-    topLeft = QPoint(marginC, height() - diameter - marginC);
-    rect = QRect(topLeft, QSize(diameter, diameter));
-    painter.setBrush(temperatureColor);
-    painter.drawEllipse(rect);
-
-    //Paint gauge
+    // Paint gauge
+    const int marginGTop = static_cast<int>(height()*0.20);
+    const int marginGBottom = static_cast<int>(height()*0.25);
     const int marginG = static_cast<int>(width()*0.45);
     const int widthGauge = width() - 2*marginG;
+    const int heightGauge = height() - marginGBottom - levelPosition;
     topLeft = QPoint(marginG, levelPosition);
-    rect = QRect(topLeft, QSize(widthGauge,
-                                height() - diameter - marginC - levelPosition));
+    rect = QRect(topLeft, QSize(widthGauge, heightGauge));
+
 
     painter.setBrush(temperatureColor);
-    painter.drawRect(rect);
+    painter.drawRoundedRect(rect, 3, 10);
 
     //Paint gauge glass
-    topLeft = QPoint(marginG, marginG);
-    rect = QRect(topLeft, QSize(widthGauge,
-                                height() - diameter - marginC - marginG));
-
+    const int heightGaugeGlass = height() - marginGBottom - marginGTop;
+    topLeft = QPoint(marginG, marginGTop);
+    rect = QRect(topLeft, QSize(widthGauge, heightGaugeGlass));
     QLinearGradient gradientGauge;
     gradientGauge.setStart(QPoint(marginG, levelPosition));
     gradientGauge.setFinalStop(QPoint(marginG + widthGauge, levelPosition));
@@ -81,7 +79,7 @@ void Thermometer::paintEvent(QPaintEvent *)
     gradientGauge.setColorAt(0.6, Qt::black);
 
     gradientGauge.setStart(topLeft);
-    gradientGauge.setFinalStop(QPoint(marginG + widthGauge, marginG));
+    gradientGauge.setFinalStop(QPoint(marginG + widthGauge, marginGTop));
     gradientGauge.setSpread(QGradient::RepeatSpread);
     gradientGauge.setColorAt(0, QColor(0xff, 0xff, 0xff, 0x00));
     gradientGauge.setColorAt(0.8, QColor(0xff, 0xff, 0xff, 0x55));
@@ -89,27 +87,21 @@ void Thermometer::paintEvent(QPaintEvent *)
 
     painter.setBrush(gradientGauge);
     painter.setBrushOrigin(marginG, levelPosition);
-    painter.drawRect(rect);
+    painter.drawRoundedRect(rect, 10, 10);
 
-    //Paint Circle glass
-    topLeft = QPoint(marginC, height() - diameter - marginC);
-    rect = QRect(topLeft, QSize(diameter, diameter));
+   //Paint LCDNumber
+    const int marginLCDTop = marginGTop + heightGaugeGlass
+                           + static_cast<int>(height()*0.05);
+    const int marginLCDBottom = static_cast<int>(height()*0.09);
+    const int marginLCD = static_cast<int>(width()*0.23);
+    const int widthLCD = width() - 2*marginLCD;
+    const int heightLCD = height() - marginLCDBottom - marginLCDTop;
 
-    QLinearGradient gradientCircle;
-    gradientCircle.setStart(topLeft);
-    gradientCircle.setFinalStop(QPoint(width() - marginC, height() - diameter - marginC ));
-    gradientCircle.setColorAt(0, temperatureColor);
-    gradientCircle.setColorAt(0.6, Qt::black);
-
-    gradientCircle.setColorAt(0, QColor(0xff, 0xff, 0xff, 0x00));
-    gradientCircle.setColorAt(0.8, QColor(0xff, 0xff, 0xff, 0x55));
-    gradientCircle.setColorAt(1, QColor(0xff, 0xff, 0xff, 0x00));
-
-    painter.setBrush(gradientCircle);
-    //painter.setBrush(temperatureColor);
+    topLeft = QPoint(marginLCD, marginLCDTop);
+    rect = QRect(topLeft, QSize(widthLCD, heightLCD));
+    lcdTemp->setGeometry(rect);
 
 
-    painter.drawEllipse(rect);
     updateLevelPosition();
 }
 
@@ -136,10 +128,10 @@ int Thermometer::getLevelAt(double temperature)
     /* First we set the size and the position of the gauge accordind its
      * representation in paintEvent after
      * "Rounded Rectangle - temperature color - foreground" comment */
-    const int marginC = static_cast<int>(width()*0.25);
+    const int marginGTop = static_cast<int>(height()*0.20);
+    const int marginGBottom = static_cast<int>(height()*0.25);
     const int marginG = static_cast<int>(width()*0.45);
-    const int diameter = width() - 2*marginC;
-    const int H = height() - diameter - marginC - marginG;
+    const int H = height() - marginGBottom - marginGTop;
     const int pos_y = marginG;
 
     double scale = H / (maxTemperature - minTemperature);
