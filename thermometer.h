@@ -19,25 +19,26 @@ protected:
     virtual void paintEvent(QPaintEvent *event) override;
 
 private:
-    int getLevelAt(double temperature);
-    QLinearGradient setThermometerColors(QPoint, QPoint);
+    int getLevelAt(const double temperature);
+    double getTemperatureAt(const int level);
+
 
 signals:
-    void temperatureChanged(double);
+    void levelChanged(void);
 
 public slots:
     void setCurrentTemperature(double value);
 
 private slots:
     void updateLevelPosition();
+    void displayTemperature();
 
 private: /* Properties */
     double currentTemperature;
     double maxTemperature, minTemperature;
-    double lowestWarmTemperature, highestColdTemperature;
     int levelPosition;
-    QColor temperatureColor;
     QTimer *levelUpdatingTime;
+    QTimer *temperatureDisplayiTime;
     QLCDNumber *lcdTemp;
 };
 

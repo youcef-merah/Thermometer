@@ -11,13 +11,12 @@ Thermometer::Thermometer(QWidget *parent, double max, double min)
 
     maxTemperature = max;
     minTemperature = min;
-    lowestWarmTemperature  = (2*max + min)/3;
-    highestColdTemperature = (max + 2*min)/3;
-
-    temperatureColor = Qt::darkRed;
 
     levelUpdatingTime = new QTimer();
-    levelUpdatingTime->setInterval(100);
+    levelUpdatingTime->setInterval(500);
+    temperatureDisplayiTime = new QTimer();
+    temperatureDisplayiTime->setInterval(500);
+
     levelPosition = getLevelAt(currentTemperature = (max+min)/2);
 
     lcdTemp = new QLCDNumber(this);
@@ -26,8 +25,12 @@ Thermometer::Thermometer(QWidget *parent, double max, double min)
     lcdTemp->setStyleSheet("background-color: black;"
                            "color: red;"
                            "border: 2px solid gray;");
+
     connect(levelUpdatingTime, &QTimer::timeout,
             this, QOverload<>::of(&Thermometer::update));
+
+    connect(temperatureDisplayiTime, &QTimer::timeout,
+            this, &Thermometer::displayTemperature);
 }
 
 Thermometer::~Thermometer()
@@ -65,8 +68,8 @@ void Thermometer::paintEvent(QPaintEvent *)
     rect = QRect(topLeft, QSize(widthGauge, heightGauge));
 
 
-    painter.setBrush(temperatureColor);
-    painter.drawRoundedRect(rect, 3, 10);
+    painter.setBrush(Qt::darkRed);
+    painter.drawRoundedRect(rect, 10, 10);
 
     //Paint gauge glass
     const int heightGaugeGlass = height() - marginGBottom - marginGTop;
@@ -75,7 +78,7 @@ void Thermometer::paintEvent(QPaintEvent *)
     QLinearGradient gradientGauge;
     gradientGauge.setStart(QPoint(marginG, levelPosition));
     gradientGauge.setFinalStop(QPoint(marginG + widthGauge, levelPosition));
-    gradientGauge.setColorAt(0, temperatureColor);
+    gradientGauge.setColorAt(0, Qt::darkRed);
     gradientGauge.setColorAt(0.6, Qt::black);
 
     gradientGauge.setStart(topLeft);
@@ -89,7 +92,7 @@ void Thermometer::paintEvent(QPaintEvent *)
     painter.setBrushOrigin(marginG, levelPosition);
     painter.drawRoundedRect(rect, 10, 10);
 
-   //Paint LCDNumber
+   //Set LCDNumber geometry
     const int marginLCDTop = marginGTop + heightGaugeGlass
                            + static_cast<int>(height()*0.05);
     const int marginLCDBottom = static_cast<int>(height()*0.09);
@@ -100,7 +103,6 @@ void Thermometer::paintEvent(QPaintEvent *)
     topLeft = QPoint(marginLCD, marginLCDTop);
     rect = QRect(topLeft, QSize(widthLCD, heightLCD));
     lcdTemp->setGeometry(rect);
-
 
     updateLevelPosition();
 }
@@ -123,7 +125,7 @@ void Thermometer::paintEvent(QPaintEvent *)
  *           <=> temp_y - pos_y = scale * (max - min)
  *           <=> temp_y = pos_y + scale * deltaTemp
  */
-int Thermometer::getLevelAt(double temperature)
+int Thermometer::getLevelAt(const double temperature)
 {
     /* First we set the size and the position of the gauge accordind its
      * representation in paintEvent after
@@ -134,9 +136,27 @@ int Thermometer::getLevelAt(double temperature)
     const int H = height() - marginGBottom - marginGTop;
     const int pos_y = marginG;
 
-    double scale = H / (maxTemperature - minTemperature);
-    double deltaTemperature = (maxTemperature - temperature);
+    const double scale = H / (maxTemperature - minTemperature);
+    const double deltaTemperature = (maxTemperature - temperature);
     return static_cast<int>(pos_y + scale * deltaTemperature);
+}
+
+/* Returns the temperature correspondingt to the level 'level'
+ * Tis fuction is not the inverse of getLevelAt which is NOT
+ * bijective (living in N).
+ * Consider getLevelAt looks like the floor function
+ */
+double Thermometer::getTemperatureAt(const int level)
+{
+     const int marginGTop = static_cast<int>(height()*0.20);
+     const int marginGBottom = static_cast<int>(height()*0.25);
+     const int marginG = static_cast<int>(width()*0.45);
+     const int H = height() - marginGBottom - marginGTop;
+     const int pos_y = marginG;
+
+     const double inv_scale = (maxTemperature - minTemperature)/ H;
+     const int delta_y = level - pos_y;
+     return maxTemperature - (delta_y*inv_scale);
 }
 
 void Thermometer::setCurrentTemperature(double newTemperature)
@@ -149,16 +169,29 @@ void Thermometer::setCurrentTemperature(double newTemperature)
     currentTemperature = newTemperature;
 
     levelUpdatingTime->start();
-
-    emit temperatureChanged(newTemperature);
 }
 
 void Thermometer::updateLevelPosition()
 {
-    if(levelPosition < getLevelAt(currentTemperature))
-        levelPosition++;
-    else if(levelPosition > getLevelAt(currentTemperature))
-        levelPosition--;
-    else
+    if(levelPosition == getLevelAt(currentTemperature))
+    {
+        lcdTemp->display(currentTemperature);
         levelUpdatingTime->stop();
+    }
+    else
+    {
+        if(levelPosition > getLevelAt(currentTemperature))
+        levelPosition--;
+        else
+        levelPosition++;
+
+        temperatureDisplayiTime->start();
+        emit levelChanged();
+    }
+}
+
+void Thermometer::displayTemperature()
+{
+   lcdTemp->display(getTemperatureAt(levelPosition));
+   temperatureDisplayiTime->stop();
 }
