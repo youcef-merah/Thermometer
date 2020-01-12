@@ -4,7 +4,9 @@
 #include <QWidget>
 #include <QLCDNumber>
 
-class Thermometer : public QWidget
+#include "thermometer_global.h"
+
+class THERMOMETER_EXPORT Thermometer : public QWidget
 {
     Q_OBJECT
 

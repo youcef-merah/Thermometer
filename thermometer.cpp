@@ -13,9 +13,9 @@ Thermometer::Thermometer(QWidget *parent, double max, double min)
     minTemperature = min;
 
     levelUpdatingTime = new QTimer();
-    levelUpdatingTime->setInterval(500);
+    levelUpdatingTime->setInterval(100);
     temperatureDisplayiTime = new QTimer();
-    temperatureDisplayiTime->setInterval(500);
+    temperatureDisplayiTime->setInterval(100);
 
     levelPosition = getLevelAt(currentTemperature = (max+min)/2);
 
@@ -23,7 +23,7 @@ Thermometer::Thermometer(QWidget *parent, double max, double min)
     lcdTemp->display(currentTemperature);
     lcdTemp->setDigitCount(4);
     lcdTemp->setStyleSheet("background-color: black;"
-                           "color: red;"
+                           "color: darkred;"
                            "border: 2px solid gray;");
 
     connect(levelUpdatingTime, &QTimer::timeout,
@@ -66,7 +66,6 @@ void Thermometer::paintEvent(QPaintEvent *)
     const int heightGauge = height() - marginGBottom - levelPosition;
     topLeft = QPoint(marginG, levelPosition);
     rect = QRect(topLeft, QSize(widthGauge, heightGauge));
-
 
     painter.setBrush(Qt::darkRed);
     painter.drawRoundedRect(rect, 10, 10);
