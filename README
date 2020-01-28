@@ -1,0 +1,7 @@
+To compile this project in commandline:
+$ <path to your Qt repo>/<version>/gcc_64/bin/qmake thermometer.pro -spec linux-g++ CONFIG+=release CONFIG+=qml_release
+$ make -f Makefile qmake_all
+$ make
+
+Then you can run:
+$  ./thermometer
