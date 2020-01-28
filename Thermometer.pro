@@ -5,6 +5,10 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 CONFIG += c++11
 
 DEFINES += THERMOMETER_LIBRARY
+
+TARGET = thermometer
+DESTDIR = ../../lib
+
 TEMPLATE = lib
 
 SOURCES += \

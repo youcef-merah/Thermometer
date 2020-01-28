@@ -194,3 +194,13 @@ void Thermometer::displayTemperature()
    lcdTemp->display(getTemperatureAt(levelPosition));
    temperatureDisplayiTime->stop();
 }
+
+void Thermometer::setMinTemperature(double value)
+{
+    minTemperature = value;
+}
+
+void Thermometer::setMaxTemperature(double value)
+{
+    maxTemperature = value;
+}

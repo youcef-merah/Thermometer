@@ -17,6 +17,9 @@ public:
 
     ~Thermometer() override;
 
+    void setMaxTemperature(double value);
+    void setMinTemperature(double value);
+
 protected:
     virtual void paintEvent(QPaintEvent *event) override;
 
